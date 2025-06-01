@@ -1,0 +1,15 @@
+#!/bin/dash
+
+# Assign arguments
+target_file=$1
+
+# Remove the target assignment directory and all its contents
+rm -r ".take/$target_file"
+
+# Print a message confirming the removal
+echo "assignment $target_file removed"
+
+# Check if there are any remaining assignment directories in .take
+if [ -z "$(ls -d .take/*/ 2>/dev/null)" ]; then
+    echo "no assignments"
+fi

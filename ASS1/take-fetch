@@ -1,0 +1,63 @@
+#!/bin/dash
+
+# Assign arguments
+ass_name=$1
+zid=$2
+n=$3
+
+# Regular expressions for validation
+ass_regex="^[a-z][a-zA-z0-9_]*$"
+zid_regex="^z[0-9]{7}$"
+
+# Validate assignment name format
+if ! echo "$ass_name" | grep -Eq "$ass_regex"; then
+    echo "take-fetch: invalid assignment: $ass_name" 1>&2
+    exit 1
+fi
+
+# Validate zid format
+if ! echo "$zid" | grep -Eq "$zid_regex"; then
+    echo "take-fetch: invalid zid: $zid" 1>&2
+    exit 1
+fi
+
+if [ -n "$n" ]; then
+    # Define the submission directory path
+    filepath=".take/$ass_name/$zid"
+    # Check if the submission directory exists
+    if [ ! -d "$filepath" ]; then
+        echo "no submission for $ass_name by $zid" 1>&2
+        exit 1
+    else
+        # Count total submissions
+        ass_num=$( ls -1d "$filepath"/* 2>/dev/null | wc -l )
+        #error checking
+        if [ "$ass_num" -lt "$n" ]; then
+            echo "take-fetch: submission $n not found for $ass_name" 1>&2
+            exit 1
+        fi
+        if [ "$n" -gt 0 ]; then
+            sub_file="$filepath/$n"
+        else
+            fetch_num=$(( ass_num + n ))
+            sub_file="$filepath/$fetch_num"
+        fi
+        for file in "$sub_file"/*; do
+            cat "$file"
+        done
+
+    fi
+else
+    # Go straight to the last assignment
+    filepath=".take/$ass_name/$zid"
+    if [ ! -d "$filepath" ]; then
+        echo "no submission for $ass_name by $zid" 1>&2
+        exit 1
+    else
+        ass_num=$( ls -1d "$filepath"/* 2>/dev/null | wc -l )
+        sub_file="$filepath/$ass_num"
+        for file in "$sub_file"/*; do
+            cat "$file"
+        done
+    fi
+fi

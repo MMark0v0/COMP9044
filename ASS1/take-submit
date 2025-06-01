@@ -1,0 +1,86 @@
+#!/bin/dash
+
+# Assign arguments
+ass_name=$1
+zid=$2
+filename=$3
+
+# Define regular expressions to validate input formats
+ass_regex="^[a-z][a-zA-Z0-9_]*$"
+zid_regex="^z[0-9]{7}$"
+filename_regex="^[a-zA-Z0-9_.\-\/]+$"
+
+# Ensure exactly three arguments are provided
+if [ $# -ne 3 ]; then
+    echo "usage: take-submit <assignment> <zid> <filename>" 1>&2
+    exit 1
+fi
+
+# Validate assignment name
+if ! echo "$ass_name" | grep -Eq "$ass_regex"; then
+    echo "take-submit: invalid assignment: $ass_name" 1>&2
+    exit 1
+fi
+
+# Validate zID format
+if ! echo "$zid" | grep -Eq "$zid_regex"; then
+    echo "take-submit: invalid zid: $zid" 1>&2
+    exit 1
+fi
+
+# Validate filename format
+if ! echo "$filename" | grep -Eq "$filename_regex"; then
+    echo "take-submit: invalid filename: $filename" 1>&2
+    exit 1
+fi
+
+# Check if all required files exist
+if [ ! -d ".take/$ass_name" ]; then
+    echo "take-submit: assignment $ass_name not found" 1>&2
+    exit 1
+fi
+
+if [ ! -e "$filename" ]; then
+    echo "take-submit: ${filename}: No such file or directory" 1>&2
+    exit 1
+fi
+
+if [ ! -d ".take/$ass_name/$zid" ]; then
+    mkdir .take/"$ass_name/$zid"
+fi
+
+# Determine the next submission index
+max_index=$( ls -1d ".take/$ass_name/$zid/"* 2>/dev/null | sed 's/.*\///' | sort | tail -n1 )
+
+if [ -z "$max_index" ]; then
+    max_index=1
+else
+    max_index=$(( max_index + 1 ))
+fi
+
+# Create a directory for the new submission
+mkdir .take/"$ass_name/$zid/$max_index"
+cp "$filename" ".take/$ass_name/$zid/$max_index/"
+
+# Calculate the total number of submissions per student
+for ass in .take/*; do
+     if [ -d "$ass" ]; then
+        zid_path="$ass/$zid" 1>&2
+        if [ ! -d "$zid_path" ]; then
+            continue  
+        fi
+        ass_num=$( ls -1d "$zid_path"/* 2>/dev/null | wc -l )
+    fi
+done
+
+# Get file size in bytes
+bytes=$( wc -c < "$filename" )
+
+# Get last modified timestamp
+timestamp=$( date -r "$filename" "+%a %b %e %H:%M:%S %Y" 2>/dev/null || stat -f "%Sm" "$filename" 2>/dev/null )
+
+# Output
+echo "Submission accepted - submission $ass_num: $filename $bytes bytes @ $timestamp"
+
+# Log submission details
+echo "$ass_name $zid submission $ass_num: $filename $bytes bytes @ $timestamp" >> .take/submissions.log

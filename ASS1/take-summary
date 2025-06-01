@@ -1,0 +1,13 @@
+#!/bin/dash
+
+# Iterate over each assignment directory inside .take
+for ass in .take/*; do
+    if [ -d "$ass" ]; then
+        ass_base=$( basename "$ass" )
+        # Count the number of student submission directories
+        stu_num=$( ls -1d "$ass"/* 2>/dev/null | wc -l )
+        # Count by removing known non-student directories
+        stu_num=$(( stu_num - 3 ))
+        echo "assignment $ass_base: submissions from $stu_num students"
+    fi
+done

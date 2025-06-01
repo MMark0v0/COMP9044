@@ -1,0 +1,44 @@
+#!/bin/dash
+
+# Assign arguments
+zid=$1
+submit=0
+
+# Iterate over all assignments in the .take directory
+for ass in .take/*; do
+     # Check if the assignment exist
+     if [ -d "$ass" ]; then
+        zid_path="$ass/$zid" 
+        # Check if the student has submitted for this assignment
+        if [ ! -d "$zid_path" ]; then
+            continue 
+        fi
+        # Count the number of submissions
+        sub_num=0
+        ass_num=$( ls -1d "$zid_path"/* 2>/dev/null | wc -l )
+        ass_base=$( basename "$ass" )
+
+        if [ "$ass_num" -ne 0 ]; then
+            echo "* $ass_num submissions for $ass_base"
+            # Mark that at least one submission was found
+            submit=1
+            for file_path in "$zid_path"/*/*; do
+                time=""
+                # Get file number
+                sub_num=$(( sub_num + 1 ))
+                # Get file size in bytes
+                bytes=$(wc -c < "$file_path")
+                file_name=$( echo "$file_path" | sed 's/.*\///' )
+                # Get last modified timestamp
+                time=$( grep -E "$zid.*$file_name.*" .take/submissions.log | head -n $sub_num | tail -n 1 | sed -ne 's/.*@ \(.*\)/\1/p' )
+                # output
+                echo "submission $sub_num: $file_name $bytes bytes @ $time"
+            done
+        fi
+    fi
+done
+
+# If no submissions were found, output a message
+if [ "$submit" -eq 0 ]; then
+    echo "no submissions for $zid"
+fi

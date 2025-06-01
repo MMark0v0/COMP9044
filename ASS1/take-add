@@ -1,0 +1,66 @@
+#!/bin/dash
+
+# Ensure exactly four arguments are provided
+if [ $# -ne 4 ]; then
+    echo "usage: take-add <assignment> <solution> <supplied> <marking>" 1>&2
+    exit 1
+fi
+
+# Assign arguments to variables
+ass_name=$1
+solution=$2
+test_file=$3
+mark_file=$4
+
+# Define regular expressions to validate input formats
+ass_regex="^[a-z][a-zA-Z0-9_]*$"
+sol_regex="^[a-zA-Z0-9_.\-\/]*$"
+
+# Validate the assignment name format
+if ! echo "$ass_name" | grep -Eq "$ass_regex"; then
+    echo "take-add: invalid assignment: $ass_name" 1>&2
+    exit 1
+fi
+
+# Validate the solution file format
+if ! echo "$solution" | grep -Eq "$sol_regex"; then
+    echo "take-add: ${solution}: No such file or directory" 1>&2
+    exit 1
+fi
+
+# Ensure the .take directory exists
+if [ ! -d ".take" ]; then
+    mkdir .take
+    echo "directory .take created"
+fi
+
+# Check if all required files exist
+if [ ! -e "$solution" ]; then
+    echo "take-add: ${solution}: No such file or directory" 1>&2
+    exit 1
+fi
+
+if [ ! -e "$test_file" ]; then
+    echo "take-add: ${test_file}: No such file or directory" 1>&2
+    exit 1
+fi
+
+if [ ! -e "$mark_file" ]; then
+    echo "take-add: ${mark_file}: No such file or directory" 1>&2
+    exit 1
+fi
+
+# Copy the provided files, check if the assignment already exists
+if [ ! -d ".take/$ass_name" ]; then
+    mkdir .take/"$ass_name"
+    mkdir .take/"$ass_name"/solution
+    mkdir .take/"$ass_name"/test
+    mkdir .take/"$ass_name"/mark
+    cp "$test_file" ".take/$ass_name/test/"
+    cp "$solution" ".take/$ass_name/solution/"
+    cp "$mark_file" ".take/$ass_name/mark/"
+    echo "assignment ${ass_name} created"
+else
+    echo "take-add: assignment $ass_name already exists" 1>&2
+    exit 1
+fi
